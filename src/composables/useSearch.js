@@ -17,18 +17,17 @@ const filterParam = ref(null);
 const filterValue = ref(null);
 const totalFilteredProducts = ref(null);
 const filteredProducts = ref(null);
+const nothingFound = ref(false);
 
 const fetchData = async (action, params) => {
   try {
     const body = { action, params };
-    console.log("REQUEST BODY", body);
     const res = await fetch(URL, {
       method: "POST",
       headers: productsHeaders,
       body: JSON.stringify(body),
     });
     const data = await res.json();
-    console.log("RESPONSE DATA", data);
     return data;
   } catch (error) {
     console.error("Error fetching data:", error);
@@ -70,29 +69,22 @@ export function useSearch() {
       });
     } catch (error) {
       errorStatus.value = error;
+      getProducts(page);
     }
-    console.log(
-      "TOTAL PAGES",
-      totalPages.value,
-      "CURRENT PAGE",
-      currentPage.value,
-      "offset",
-      getOffset(page),
-      "OUTPUT DATA",
-      products.value
-    );
   };
 
   const getFilteredProducts = async (page) => {
     try {
+      nothingFound.value = false;
       isLoading.value = true;
       products.value = null;
       const action = "filter";
+      if (filterParam.value === "price") filterValue.value = +filterValue.value;
       const params = { [filterParam.value]: filterValue.value };
 
       const ids = await fetchData(action, params);
       const items = await fetchData("get_items", { ids: ids.result });
-
+      if (!items.result.length) nothingFound.value = true;
       const totalUniqueIdsCount = new Set(ids.result);
       const uniqueArrayOfItems = processItems(items);
 
@@ -104,19 +96,9 @@ export function useSearch() {
         totalFilteredProducts.value
       );
       isLoading.value = false;
-
-      console.log(
-        "TOTAL PAGES",
-        totalPages.value,
-        "CURRENT PAGE",
-        currentPage.value,
-        "offset",
-        getOffset(page),
-        "OUTPUT DATA",
-        filteredProducts.value
-      );
     } catch (error) {
       errorStatus.value = error;
+      getFilteredProducts(page);
     }
   };
 
@@ -132,5 +114,6 @@ export function useSearch() {
     filterValue,
     totalFilteredProducts,
     filteredProducts,
+    nothingFound,
   };
 }

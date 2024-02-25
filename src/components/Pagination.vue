@@ -17,7 +17,7 @@ const handlePagination = (page) => {
 </script>
 
 <template>
-  <ul class="wrapper">
+  <ul v-if="!(pagination[0] === 0)" class="wrapper">
     <li class="listBack">
       <button
         class="pagButton"
